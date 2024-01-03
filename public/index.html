@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Github Sponsor</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .authButton {
+            padding: 10px 20px;
+            margin: 20px;
+            background-color: #2d2d2d;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <main>
+            <!-- Authentication Button -->
+            <button onclick="handleAuth()" class="authButton">
+                Authenticate with GitHub
+            </button>
+        </main>
+    </div>
+
+    <script>
+        function handleAuth() {
+            const client_id = "9120b5755513c4851300";
+            const redirect_uri = "https://git-api-backend-production.up.railway.app/oauth-callback";
+            const scope = "repo"; // Adjust the scope according to your needs
+
+            // Construct the GitHub OAuth URL
+            const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}`;
+
+            // Redirect to GitHub OAuth page
+            window.location.href = githubAuthUrl;
+        }
+    </script>
+</body>
+</html>
