@@ -34,7 +34,7 @@ app.get('/oauth-callback', async (req, res) => {
         // Store the access token in session data
         const accessToken = response.data.access_token;
         req.session.accessToken = response.data.access_token;
-        res.send(response.data);
+        // res.send(response.data);
         // Fetch user information to get the username
         try {
             const userResponse = await axios.get('https://api.github.com/user', {
