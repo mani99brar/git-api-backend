@@ -55,7 +55,7 @@ app.get('/oauth-callback', async (req, res) => {
 
         } catch (error) {
             console.error("Error fetching user or repositories", error);
-            res.status(500).send("Error during fetching user or repositories");
+            res.status(500).send("Error during fetching user or repositories",error);
         }
     }).catch(error => {
         res.status(500).send("Error during token exchange: " + error.message);
