@@ -4,7 +4,9 @@ const axios = require('axios');
 const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
-
+var bodyParser = require('body-parser')
+var jsonParser = bodyParser.json()
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 const app = express();
 app.use(express.static('public'));
@@ -75,7 +77,7 @@ app.get('/session-data', (req, res) => {
     });
 });
 
-app.post('/get-repos', async (req, res) => {
+app.post('/get-repos',urlencodedParser,async (req, res) => {
 
     // Use the access token from session data
     const accessToken = req.session.accessToken;
@@ -85,7 +87,7 @@ app.post('/get-repos', async (req, res) => {
                     'Authorization': `Bearer ${accessToken}`
                 }
             });
-        res.send(reposResponse.data);
+        res.json(reposResponse.data);
     }else{
         res.send("No Access Token");
     }
