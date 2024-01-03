@@ -32,11 +32,14 @@ app.get('/oauth-callback', async (req, res) => {
         }
     }).then(async (response) => {
         // Store the access token in session data
-        // req.session.accessToken = response.data.access_token;
+        const accessToken = response.data.access_token;
+        req.session.accessToken = response.data.access_token;
+        res.send(response.data);
+        // Fetch user information to get the username
         try {
             const userResponse = await axios.get('https://api.github.com/user', {
                 headers: {
-                    'Authorization': `Bearer ${req.session.accessToken}`
+                    'Authorization': `Bearer ${accessToken}`
                 }
             });
             req.session.owner = userResponse.data.login; // Store the owner's username in the session
@@ -44,7 +47,7 @@ app.get('/oauth-callback', async (req, res) => {
             // Continue to fetch user's repositories
             const reposResponse = await axios.get('https://api.github.com/user/repos', {
                 headers: {
-                    'Authorization': `Bearer ${req.session.accessToken}`
+                    'Authorization': `Bearer ${accessToken}`
                 }
             });
 
