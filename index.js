@@ -44,15 +44,15 @@ app.get('/oauth-callback', async (req, res) => {
             });
             req.session.owner = userResponse.data.login; // Store the owner's username in the session
 
-            // Continue to fetch user's repositories
-            const reposResponse = await axios.get('https://api.github.com/user/repos', {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
+            // // Continue to fetch user's repositories
+            // const reposResponse = await axios.get('https://api.github.com/user/repos', {
+            //     headers: {
+            //         'Authorization': `Bearer ${accessToken}`
+            //     }
+            // });
 
             // Send back repositories data as response or handle accordingly
-            res.send(reposResponse.data);
+            res.redirect('https://git-api-nu.vercel.app/repos');
 
         } catch (error) {
             console.error("Error fetching user or repositories", error);
@@ -75,21 +75,22 @@ app.get('/session-data', (req, res) => {
     });
 });
 
-// app.get('/get-repos', async (req, res) => {
-//     // Use the access token from session data
-//     const accessToken = req.session.accessToken;
+app.post('/get-repos', async (req, res) => {
 
-//     axios.get('https://api.github.com/user/repos', {
-//         headers: {
-//             'Authorization': `Bearer ${accessToken}`
-//         }
-//     }).then(response => {
-//         res.send(response.data);
-//     }).catch(error => {
-//         console.error("Error fetching repositories", error);
-//         res.status(500).send("Error fetching repositories");
-//     });
-// });
+    // Use the access token from session data
+    const accessToken = req.session.accessToken;
+    if(accessToken){
+        const reposResponse = await axios.get('https://api.github.com/user/repos', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+        res.send(reposResponse.data);
+    }else{
+        res.send("No Access Token");
+    }
+});
+
 
 app.get('/save-file', async (req, res) => {
     const owner = 'mani99brar';  // Replace with the actual username
@@ -141,10 +142,7 @@ app.get('/save-file', async (req, res) => {
     }
 });
 
-app.get('/welcome', (req, res) => {
-    // Handle the welcome page after the user is authenticated
-    res.send("You're successfully authenticated. Welcome!");
-});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '/public/index.html')); // Adjust with the actual path to your HTML file
 });
