@@ -24,43 +24,42 @@ const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 app.get('/oauth-callback', async (req, res) => {
     const requestToken = req.query.code; // Get the code from the query parameter
 
-    // axios({
-    //     method: 'post',
-    //     url: `https://github.com/login/oauth/access_token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${requestToken}`,
-    //     headers: {
-    //         accept: 'application/json'
-    //     }
-    // }).then(async (response) => {
-    //     // Store the access token in session data
-    //     // req.session.accessToken = response.data.access_token;
-    //     res.send(response.data);
-    //     // // Fetch user information to get the username
-    //     // try {
-    //     //     const userResponse = await axios.get('https://api.github.com/user', {
-    //     //         headers: {
-    //     //             'Authorization': `Bearer ${req.session.accessToken}`
-    //     //         }
-    //     //     });
-    //     //     req.session.owner = userResponse.data.login; // Store the owner's username in the session
+    axios({
+        method: 'post',
+        url: `https://github.com/login/oauth/access_token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${requestToken}`,
+        headers: {
+            accept: 'application/json'
+        }
+    }).then(async (response) => {
+        // Store the access token in session data
+        // req.session.accessToken = response.data.access_token;
+        res.send(response.data);
+        // Fetch user information to get the username
+        try {
+            const userResponse = await axios.get('https://api.github.com/user', {
+                headers: {
+                    'Authorization': `Bearer ${req.session.accessToken}`
+                }
+            });
+            req.session.owner = userResponse.data.login; // Store the owner's username in the session
 
-    //     //     // Continue to fetch user's repositories
-    //     //     const reposResponse = await axios.get('https://api.github.com/user/repos', {
-    //     //         headers: {
-    //     //             'Authorization': `Bearer ${req.session.accessToken}`
-    //     //         }
-    //     //     });
+            // Continue to fetch user's repositories
+            const reposResponse = await axios.get('https://api.github.com/user/repos', {
+                headers: {
+                    'Authorization': `Bearer ${req.session.accessToken}`
+                }
+            });
 
-    //     //     // Send back repositories data as response or handle accordingly
-    //     //     res.send(reposResponse.data);
+            // Send back repositories data as response or handle accordingly
+            res.send(reposResponse.data);
 
-    //     // } catch (error) {
-    //     //     console.error("Error fetching user or repositories", error);
-    //     //     res.send("Error during fetching user or repositories",error);
-    //     // }
-    // }).catch(error => {
-    //     res.send("Error during token exchange WW: " + error);
-    // });
-    res.send(requestToken);
+        } catch (error) {
+            console.error("Error fetching user or repositories", error);
+            res.send("Error during fetching user or repositories",error);
+        }
+    }).catch(error => {
+        res.send("Error during token exchange WW: " + error);
+    });
 });
 
 app.get('/session-data', (req, res) => {
