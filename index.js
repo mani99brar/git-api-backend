@@ -58,7 +58,7 @@ app.get('/oauth-callback', async (req, res) => {
         //     res.send("Error during fetching user or repositories",error);
         // }
     }).catch(error => {
-        res.send("Error during token exchange WW: " + error);
+        res.send("Error during token exchange WWA: " + error);
     });
 });
 
