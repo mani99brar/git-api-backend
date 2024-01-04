@@ -1,26 +1,28 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 var bodyParser = require('body-parser')
-var jsonParser = bodyParser.json()
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
+var jsonParser = bodyParser.json();
+const mongoose = require('mongoose');
+const Token = require('./token'); // Adjust the path as necessary
+
+
+const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
+const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const MONGO_URI = process.env.MONGO_URI;
+
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('Successfully connected to MongoDB'))
+  .catch(err => console.error('Connection error', err));
 
 const app = express();
 app.use(express.static('public'));
 app.use(cors());
 // Configure session middleware
-app.use(session({
-    secret: 'your secret', // Use a real secret in production
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: !true } // Set secure to true if using https
-}));
 
-const CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+
 
 
 
@@ -34,28 +36,36 @@ app.get('/oauth-callback', async (req, res) => {
         }
     }).then(async (response) => {
         // Store the access token in session data
-        req.session.accessToken = response.data.access_token;
-        res.send(response.data);
+        const accessToken = response.data.access_token;
+        const userResponse = await axios({
+            method: 'get',
+            url: `https://api.github.com/user`,
+            headers: {
+                Authorization: `token ${accessToken}`
+            }
+        });
+        const username = userResponse.data.login;
+
+        // Save or update the user's token in the database
+        const userData = await Token.findOneAndUpdate({ username: username }, {
+            name: username,
+            token: accessToken
+        }, { new: true, upsert: true });
+
+        res.send(userData);
+        
         res.redirect('https://git-api-nu.vercel.app/repos'); 
     }).catch(error => {
         res.send("Error during token exchange: " + error);
     });
 });
 
-app.get('/session-data',jsonParser, (req, res) => {
-    // Get the session data
-    const accessToken = req.session.accessToken;
-    // Send back the data
-    res.send({
-        accessToken: accessToken,
-    });
-});
 
 app.post('/get-repos', jsonParser,async (req, res) => {
     // Use the access token from session data
     
-    const accessToken =  req.session.accessToken;
-    console.log(req.session);
+    const accessToken = "";
+
     if (accessToken) {
         try {
             const reposResponse = await axios.get('https://api.github.com/user/repos', {
@@ -75,7 +85,7 @@ app.post('/get-repos', jsonParser,async (req, res) => {
 
 
 app.post('/save-file', jsonParser,async (req, res) => {
-    const accessToken = req.session.accessToken;
+    const accessToken = "";
     const owner = req.body.owner;  // Replace with the actual username
     const repo = req.body.repo;  // Replace with the actual repo name
     const path = '.github/FUNDING.yml';
