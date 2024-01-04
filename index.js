@@ -55,7 +55,7 @@ app.get('/session-data', (req, res) => {
 
 app.post('/get-repos', async (req, res) => {
     // Use the access token from session data
-    const accessToken = req.session.accessToken;
+    const accessToken = await req.session.accessToken;
     if (accessToken) {
         try {
             const reposResponse = await axios.get('https://api.github.com/user/repos', {
