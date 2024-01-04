@@ -26,6 +26,9 @@ const CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 
 app.get('/oauth-callback', async (req, res) => {
     const requestToken = req.query.code; // Get the code from the query parameter
+    if(req.session.accessToken){
+        res.redirect('https://git-api-nu.vercel.app/repos'); 
+    }
     axios({
         method: 'post',
         url: `https://github.com/login/oauth/access_token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${requestToken}`,
@@ -35,6 +38,7 @@ app.get('/oauth-callback', async (req, res) => {
     }).then(async (response) => {
         // Store the access token in session data
         req.session.accessToken = response.data.access_token;
+        res.redirect('https://git-api-nu.vercel.app/repos'); 
     }).catch(error => {
         res.send("Error during token exchange: " + error);
     });
