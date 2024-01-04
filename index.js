@@ -41,7 +41,7 @@ app.get('/oauth-callback', async (req, res) => {
     });
 });
 
-app.get('/session-data', (req, res) => {
+app.get('/session-data',jsonParser, (req, res) => {
     // Get the session data
     const accessToken = req.session.accessToken;
     // Send back the data
@@ -50,9 +50,9 @@ app.get('/session-data', (req, res) => {
     });
 });
 
-app.post('/get-repos', async (req, res) => {
+app.post('/get-repos', jsonParser,async (req, res) => {
     // Use the access token from session data
-    const accessToken = await req.session.accessToken;
+    const accessToken =  req.session.accessToken;
     if (accessToken) {
         try {
             const reposResponse = await axios.get('https://api.github.com/user/repos', {
