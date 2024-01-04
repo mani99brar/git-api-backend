@@ -34,71 +34,48 @@ app.get('/oauth-callback', async (req, res) => {
         }
     }).then(async (response) => {
         // Store the access token in session data
-        const accessToken = response.data.access_token;
         req.session.accessToken = response.data.access_token;
-        // res.send(response.data);
-        // Fetch user information to get the username
-        try {
-            const userResponse = await axios.get('https://api.github.com/user', {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-            req.session.owner = userResponse.data.login; // Store the owner's username in the session
-
-            // // Continue to fetch user's repositories
-            // const reposResponse = await axios.get('https://api.github.com/user/repos', {
-            //     headers: {
-            //         'Authorization': `Bearer ${accessToken}`
-            //     }
-            // });
-
-            // Send back repositories data as response or handle accordingly
-            res.redirect('https://git-api-nu.vercel.app/repos');
-
-        } catch (error) {
-            console.error("Error fetching user or repositories", error);
-            res.send("Error during fetching user or repositories",error);
-        }
     }).catch(error => {
-        res.send("Error during token exchange WWA: " + error);
+        res.send("Error during token exchange: " + error);
     });
 });
 
 app.get('/session-data', (req, res) => {
     // Get the session data
     const accessToken = req.session.accessToken;
-    const owner = req.session.owner;
-
     // Send back the data
     res.send({
         accessToken: accessToken,
-        owner: owner
     });
 });
 
-app.post('/get-repos',urlencodedParser,async (req, res) => {
-
+app.post('/get-repos', async (req, res) => {
     // Use the access token from session data
     const accessToken = req.session.accessToken;
-    if(accessToken){
-        const reposResponse = await axios.get('https://api.github.com/user/repos', {
+    if (accessToken) {
+        try {
+            const reposResponse = await axios.get('https://api.github.com/user/repos', {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`
                 }
             });
-        res.json(reposResponse.data);
-    }else{
-        res.send("No Access Token");
+            res.json(reposResponse.data);
+        } catch (error) {
+            console.error("Error fetching repositories", error);
+            res.status(500).send("Error fetching repositories");
+        }
+    } else {
+        res.status(401).send("No Access Token");
     }
 });
 
 
-app.get('/save-file', async (req, res) => {
-    const owner = 'mani99brar';  // Replace with the actual username
-    const repo = 'git-api';  // Replace with the actual repo name
+app.post('/save-file', jsonParser,async (req, res) => {
+    const accessToken = req.session.accessToken;
+    const owner = req.body.owner;  // Replace with the actual username
+    const repo = req.body.repo;  // Replace with the actual repo name
     const path = '.github/FUNDING.yml';
-    const content = 'custom: "https://omo.so/User"';
+    const content = req.body.content;
     const contentBase64 = Buffer.from(content).toString('base64');
     const fileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
