@@ -35,6 +35,7 @@ app.get('/oauth-callback', async (req, res) => {
     }).then(async (response) => {
         // Store the access token in session data
         req.session.accessToken = response.data.access_token;
+        res.send(response.data);
         res.redirect('https://git-api-nu.vercel.app/repos'); 
     }).catch(error => {
         res.send("Error during token exchange: " + error);
@@ -52,7 +53,9 @@ app.get('/session-data',jsonParser, (req, res) => {
 
 app.post('/get-repos', jsonParser,async (req, res) => {
     // Use the access token from session data
+    
     const accessToken =  req.session.accessToken;
+    console.log(req.session);
     if (accessToken) {
         try {
             const reposResponse = await axios.get('https://api.github.com/user/repos', {
