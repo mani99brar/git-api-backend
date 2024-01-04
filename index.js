@@ -47,7 +47,7 @@ app.get('/oauth-callback', async (req, res) => {
         const username = userResponse.data.login;
 
         // Save or update the user's token in the database
-        const userData = await Token.findOneAndUpdate({ username: username }, {
+        const userData = await Token.findOneAndUpdate({ name: username }, {
             name: username,
             token: accessToken
         }, { new: true, upsert: true });
