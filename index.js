@@ -51,89 +51,111 @@ app.get('/oauth-callback', async (req, res) => {
             name: username,
             token: accessToken
         }, { new: true, upsert: true });
-
-        res.send(userData);
         
-        res.redirect('https://git-api-nu.vercel.app/repos'); 
+        res.redirect(`https://git-api-nu.vercel.app/${username}`); 
     }).catch(error => {
         res.send("Error during token exchange: " + error);
     });
 });
 
 
-app.post('/get-repos', jsonParser,async (req, res) => {
-    // Use the access token from session data
-    
-    const accessToken = "";
+app.post('/get-repos', jsonParser, async (req, res) => {
+    // Extract username from request body
+    const username = req.body.user;
+    console.log(username);
+    if (!username) {
+        return res.status(400).send("Username is required");
+    }
 
-    if (accessToken) {
-        try {
-            const reposResponse = await axios.get('https://api.github.com/user/repos', {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-            res.json(reposResponse.data);
-        } catch (error) {
-            console.error("Error fetching repositories", error);
-            res.status(500).send("Error fetching repositories");
+    try {
+        // Find the user in the database
+        const userToken = await Token.findOne({ name: username });
+        if (!userToken || !userToken.token) {
+            return res.status(404).send("User not found or no access token available");
         }
-    } else {
-        res.status(401).send("No Access Token");
+        console.log(userToken);
+        const accessToken = userToken.token;
+        // Use the access token to fetch repositories from GitHub
+        const reposResponse = await axios.get('https://api.github.com/user/repos', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        res.json(reposResponse.data); // Send the repositories back to the client
+    } catch (error) {
+        console.error("Error fetching repositories", error);
+        res.status(500).send("Error fetching repositories");
     }
 });
 
 
-app.post('/save-file', jsonParser,async (req, res) => {
-    const accessToken = "";
-    const owner = req.body.owner;  // Replace with the actual username
-    const repo = req.body.repo;  // Replace with the actual repo name
+app.post('/save-file', jsonParser, async (req, res) => {
+    const owner = req.body.owner; // The GitHub username
+    const repo = req.body.repo; // The repository name
     const path = '.github/FUNDING.yml';
     const content = req.body.content;
     const contentBase64 = Buffer.from(content).toString('base64');
     const fileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
-    axios.get(fileUrl, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/vnd.github.v3+json'
+    if (!owner) {
+        return res.status(400).send("Owner username is required");
+    }
+
+    try {
+        // Find the user's access token in the database
+        const userToken = await Token.findOne({ name: owner });
+        if (!userToken || !userToken.token) {
+            return res.status(404).send("User not found or no access token available");
         }
-    }).then(response => {
-        // File exists, get the SHA to update it
-        const existingSha = response.data.sha;
-        createOrUpdateFile(existingSha);
-    }).catch(error => {
-        if (error.response && error.response.status === 404) {
-            // File does not exist, create it without SHA
-            createOrUpdateFile();
-        } else {
-            // Some other error occurred
-            console.error("Error fetching FUNDING.yml", error);
-            res.status(500).send("Error fetching FUNDING.yml");
-        }
-    });
-    function createOrUpdateFile(sha) {
-        let payload = {
-            message: "Creating or updating FUNDING.yml",
-            content: contentBase64
-        };
-        if (sha) {
-            payload.sha = sha; // include SHA if updating the file
-        }
-        axios.put(fileUrl, payload, {
+        const accessToken = userToken.token;
+
+        axios.get(fileUrl, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Accept': 'application/vnd.github.v3+json'
             }
         }).then(response => {
-            console.log("File created or updated successfully:", response.data);
-            res.send(response.data);
+            // File exists, get the SHA to update it
+            const existingSha = response.data.sha;
+            createOrUpdateFile(existingSha);
         }).catch(error => {
-            console.error("Error creating/updating FUNDING.yml", error);
-            res.status(500).send("Error creating/updating FUNDING.yml");
+            if (error.response && error.response.status === 404) {
+                // File does not exist, create it without SHA
+                createOrUpdateFile();
+            } else {
+                // Some other error occurred
+                console.error("Error fetching FUNDING.yml", error);
+                res.status(500).send("Error fetching FUNDING.yml");
+            }
         });
+
+        function createOrUpdateFile(sha) {
+            let payload = {
+                message: "Creating or updating FUNDING.yml",
+                content: contentBase64
+            };
+            if (sha) {
+                payload.sha = sha; // Include SHA if updating the file
+            }
+            axios.put(fileUrl, payload, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }).then(response => {
+                console.log("File created or updated successfully:", response.data);
+                res.send(response.data);
+            }).catch(error => {
+                console.error("Error creating/updating FUNDING.yml", error);
+                res.status(500).send("Error creating/updating FUNDING.yml");
+            });
+        }
+    } catch (error) {
+        console.error("Database or GitHub API error", error);
+        res.status(500).send("Internal Server Error");
     }
 });
+
 
 
 app.get('/', (req, res) => {
