@@ -28,6 +28,8 @@ app.use(cors());
 
 app.get('/oauth-callback', async (req, res) => {
     const requestToken = req.query.code; // Get the code from the query parameter
+    const user=req.query.user;
+    console.log(user);
     axios({
         method: 'post',
         url: `https://github.com/login/oauth/access_token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${requestToken}`,
