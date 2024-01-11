@@ -54,7 +54,7 @@ app.get('/oauth-callback', async (req, res) => {
             token: accessToken
         }, { new: true, upsert: true });
         
-        res.redirect(`https://git-api-nu.vercel.app/${username}`); 
+        res.redirect(`https://git-api-nu.vercel.app/${user}`); 
     }).catch(error => {
         res.send("Error during token exchange: " + error);
     });
